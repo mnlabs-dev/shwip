@@ -2,38 +2,44 @@
 
 ## Prerequis
 
-### Xcode (obligatoire)
-
-Les CommandLineTools seuls ne suffisent pas pour Swift Package Manager + SwiftUI.
-
-```bash
-# Option 1 : Installer Xcode depuis l'App Store (gratuit, ~12 Go)
-# Puis :
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-
-# Option 2 : Reinstaller les CommandLineTools (si pas besoin de SwiftUI)
-sudo rm -rf /Library/Developer/CommandLineTools
-xcode-select --install
-```
-
-Probleme actuel : Swift compiler 6.2.3 vs SDK 6.2 (mismatch). Xcode resout ce conflit.
+- Rust : `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- Bun : `curl -fsSL https://bun.sh/install | bash`
+- CommandLineTools : `xcode-select --install`
 
 ### Verification
 
 ```bash
-swift --version          # Swift 6.2+
-swift build              # Doit compiler sans erreur
-swift test               # Tests passent
+cargo --version    # 1.88+
+bun --version      # 1.3+
+```
+
+## Installation
+
+```bash
+cd ~/Developer/Apps/shwip
+bun install
+cd src-tauri && cargo check   # premiere compilation (~2 min)
 ```
 
 ## Structure du projet
 
 ```
 shwip/
-  Package.swift           # SPM manifest
-  Sources/shwip/          # Code source
-    main.swift            # Point d'entree CLI
-  Tests/shwipTests/       # Tests
+  package.json            # Frontend deps
+  vite.config.ts          # Bundler
+  tsconfig.json           # TypeScript
+  index.html              # Entry point Vite
+  src/                    # Frontend React
+    main.tsx
+    App.tsx
+  src-tauri/              # Backend Rust + Tauri
+    Cargo.toml
+    tauri.conf.json
+    src/
+      main.rs             # Entry point binaire
+      lib.rs              # Tauri app + commandes
+      scanner.rs          # Moteur de scan
+    icons/                # App icons (PNG)
   docs/                   # Documentation produit
     product.md            # Vision et features
     stack.md              # Choix techniques
@@ -45,10 +51,16 @@ shwip/
   LICENSE                 # MIT
 ```
 
+## Commandes
+
+```bash
+bun run tauri dev         # Dev mode (frontend + backend)
+bun run tauri build       # Production build (.dmg)
+cd src-tauri && cargo test  # Tests Rust
+```
+
 ## Premiere session de dev
 
-1. Installer Xcode ou mettre a jour CommandLineTools
-2. `cd ~/Developer/Apps/shwip`
-3. `swift build` (verifier que ca compile)
-4. `swift test` (verifier que les tests passent)
-5. Commencer par le scan des residus d'apps (feature la plus simple et la plus impactante)
+1. `bun run tauri dev` (verifier que l'app s'ouvre)
+2. Implementer les scanners par ecosysteme dans `src-tauri/src/scanner.rs`
+3. Feature par feature : residus apps → NVM → caches npm/bun/uv → Ollama

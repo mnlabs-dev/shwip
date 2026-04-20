@@ -1,9 +1,9 @@
-.build/
-.swiftpm/
-DerivedData/
-*.xcodeproj
-*.xcworkspace
+node_modules/
+dist/
+src-tauri/target/
 .DS_Store
+*.log
 .claude/memory
 .claude/refs
 .claude/plans
+.build/

@@ -6,83 +6,84 @@
 
 | Couche | Technologie | Version |
 |--------|-------------|---------|
-| Langage | Swift | 6.2 |
-| UI (future) | SwiftUI | macOS 14+ |
-| Package manager | Swift Package Manager | natif |
-| Tests | Swift Testing | natif |
-| Lint/Format | swift-format | natif |
-| LLM local | Ollama (optionnel) | API REST localhost:11434 |
-| Distribution | Homebrew tap + GitHub Releases | - |
+| Frontend | React + TypeScript | React 19, TS 5.7 |
+| Bundler | Vite | 6.x |
+| Desktop | Tauri 2 | 2.x |
+| Backend | Rust | edition 2021 |
+| Scan engine | Rust (sysinfo, dirs, fs) | - |
+| LLM embarque | llama-cpp-rs (optionnel) | tiny model ~500Mo |
+| LLM externe | Ollama REST API (optionnel) | localhost:11434 |
+| Tests frontend | Vitest | 2.x |
+| Tests backend | cargo test | natif |
+| Lint/Format | Biome (TS) + clippy/rustfmt (Rust) | - |
+| Distribution | Homebrew tap + GitHub Releases + .dmg | - |
 
 ## Decisions argumentees
 
-### Swift plutot que Rust ou TypeScript
+### Tauri 2 plutot que SwiftUI ou Electron
 
-Choix : Swift avec SPM
+Choix : Tauri 2 (React frontend + Rust backend)
 Raisons :
-- Acces natif aux APIs macOS (NSWorkspace, FileManager, LaunchServices) sans FFI
-- SwiftUI pour le menu bar app futur sans couche supplementaire
-- Swift Testing integre, pas besoin de framework externe
-- Le projet est macOS-only, pas de portabilite necessaire
-- Swift 6.2 disponible via CommandLineTools (pas besoin de Xcode complet)
+- Equipe expertise JS/TS, pas Swift
+- Binaire leger (~8 Mo vs ~150 Mo Electron)
+- Rust pour le scan engine : acces filesystem rapide, safe, single binary
+- Tauri v2 supporte tray icon (menu bar) natif macOS
+- Cross-platform futur (Linux devs ont les memes problemes NVM/npm/cargo/Ollama)
+- Pas besoin de Xcode
 
 Alternatives ecartees :
-- Rust : excellent pour CLI cross-platform, mais FFI complexe pour macOS APIs (NSWorkspace, app bundles). Le projet est macOS-only.
-- TypeScript/Bun : rapide a prototyper, mais pas d'acces natif aux APIs macOS. Dependrait de `mdfind`, `lsappinfo` via shell.
-- Go : meme probleme que Rust pour les APIs macOS natives.
+- SwiftUI : Xcode obligatoire, expertise manquante, macOS-only, LLM C interop penible
+- Electron : 150 Mo RAM idle, contradictoire pour un outil de nettoyage
+- Go + TUI : pas de GUI native, APIs macOS limitees
 
-### Architecture : regles deterministes + LLM optionnel
+### LLM hybride : embarque + externe
 
-Choix : moteur de regles codees en Swift, LLM via Ollama REST API en option
+Choix : llama-cpp-rs pour tiny model embarque + Ollama REST API pour modeles plus capables
 Raisons :
-- 90% des cas sont deterministes (cross-reference /Applications, check mtime, parse manifests)
-- Le LLM ajoute : explications humaines, detection de supersession (qwen3 > qwen2.5), cas ambigus
-- Zero dependance obligatoire sur un LLM : fonctionne offline, rapide, predictible
-- Ollama REST API est triviale (POST localhost:11434/api/generate)
+- llama-cpp-rs est mature en Rust, bindings stables
+- Tiny model embarque (~500 Mo, qwen3:0.6b ou phi-3-mini) : zero dependance externe
+- Ollama pour les users qui veulent un modele plus capable
+- Fallback gracieux : explications codees si aucun LLM disponible
 
-Alternatives ecartees :
-- LLM-first (tout passe par le LLM) : lent, imprevisible, necessite un modele installe
-- ML embeddings pour similarite : over-engineering pour ce use case
+Architecture LLM :
+```
+User preference
+  ├─ "embedded" → llama-cpp-rs + tiny model bundle
+  ├─ "ollama"   → REST API localhost:11434
+  └─ "none"     → explications deterministes (defaut)
+```
 
-### CLI-first, UI ensuite
+### CLI + GUI
 
-Choix : CLI comme produit principal, menu bar app comme extension future
+Choix : binaire unique avec sous-commandes CLI + fenetre Tauri
 Raisons :
-- Les devs vivent dans le terminal
-- Testable, scriptable, CI-friendly
-- Le menu bar app reutilise le meme moteur via Process ou framework partage
-- Plus rapide a shipper un CLI qu'une app signee/notariee
-
-### Distribution : Homebrew tap
-
-Choix : `brew install shwip/tap/shwip`
-Raisons :
-- Standard pour les CLIs macOS dans la communaute dev
-- Pas besoin de signature Apple pour un CLI
-- GitHub Releases pour les binaires universels (arm64 + x86_64)
+- `shwip scan` en CLI pour les power users et CI
+- `shwip` sans argument ouvre la fenetre Tauri
+- Meme moteur Rust, zero duplication
 
 ## Infrastructure
 
 | Service | Usage | Provider |
 |---------|-------|----------|
 | CI/CD | Tests + build + release | GitHub Actions |
-| Distribution | Homebrew tap | GitHub (shwip/homebrew-tap) |
-| Binaires | Universal (arm64+x86_64) | GitHub Releases |
+| Distribution | Homebrew tap + .dmg | GitHub Releases |
+| Binaires | Universal macOS (arm64 + x86_64) | GitHub Actions |
 
 ## Commandes
 
 ```bash
 # Dev
-swift build
+bun install
+bun run tauri dev
 
 # Tests
-swift test
+bun run test              # frontend
+cd src-tauri && cargo test # backend
 
-# Run
-swift run shwip scan
-swift run shwip clean --dry-run
-swift run shwip report
+# Build
+bun run tauri build
 
-# Release build
-swift build -c release
+# CLI only (sans UI)
+cd src-tauri && cargo build --release
+./target/release/shwip scan
 ```

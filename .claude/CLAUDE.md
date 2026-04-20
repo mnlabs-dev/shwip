@@ -4,7 +4,7 @@ Ce projet herite des principes du CLAUDE.md global. TDD, Plan Mode, Read Before 
 
 # shwip
 
-> Nettoyage Mac intelligent pour developpeurs. CLI Swift, zero cloud, zero telemetrie.
+> Nettoyage Mac intelligent pour developpeurs. Tauri 2 (React + Rust), zero cloud, zero telemetrie.
 
 <!-- product.md et stack.md : charger a la demande uniquement (Read docs/product.md / docs/stack.md) -->
 
@@ -12,19 +12,22 @@ Ce projet herite des principes du CLAUDE.md global. TDD, Plan Mode, Read Before 
 
 | Cle | Valeur |
 |-----|--------|
-| Langage | Swift 6.2 |
-| Runtime | macOS 14+ (Sonoma) |
-| Tests | Swift Testing |
-| PM | Swift Package Manager |
-| Build | `swift build` |
-| Test | `swift test` |
-| Run | `swift run shwip scan` |
-| Lint | `swift-format` |
+| Frontend | React 19 + TypeScript |
+| Desktop | Tauri 2 |
+| Backend | Rust (edition 2021) |
+| Bundler | Vite 6 |
+| Tests | Vitest (frontend) + cargo test (backend) |
+| PM | bun |
+| Dev | `bun run tauri dev` |
+| Build | `bun run tauri build` |
+| Lint | `biome check` (TS) + `cargo clippy` (Rust) |
 
 ## Architecture
 
-Moteur de regles deterministes (90%) + LLM local optionnel via Ollama REST API (10%).
-CLI-first. Menu bar SwiftUI futur.
+- Scan engine en Rust : regles deterministes (90%) + LLM optionnel (10%)
+- Frontend React : affichage rapport, actions clean/undo
+- LLM hybride : llama-cpp-rs embarque (tiny) OU Ollama REST API OU aucun
+- CLI + GUI : meme binaire, `shwip scan` (CLI) ou `shwip` (ouvre Tauri)
 
 ## Connaissance projet
 
