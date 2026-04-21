@@ -6,8 +6,11 @@ use std::path::Path;
 use tokio::task::JoinSet;
 
 pub async fn scan_all() -> Result<Vec<ScanResult>, ShwipError> {
+    tracing::info!("starting scan with default config");
     let config = ScanConfig::default();
-    scan_parallel(&config).await
+    let results = scan_parallel(&config).await?;
+    tracing::info!(count = results.len(), "scan complete");
+    Ok(results)
 }
 
 pub async fn scan_all_with_progress<F>(progress: F) -> Result<Vec<ScanResult>, ShwipError>

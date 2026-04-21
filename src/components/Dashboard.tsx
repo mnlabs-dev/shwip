@@ -1,8 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useDarkMode } from "../hooks/useDarkMode";
 import type { SortKey } from "../hooks/useFilter";
 import { useFilter } from "../hooks/useFilter";
-import type { ScanResult } from "../types";
+import { useScanProgress } from "../hooks/useScanProgress";
+import type { ScanHistory, ScanHistoryEntry, ScanResult } from "../types";
 import { formatSize, totalSize } from "../types";
 import { CleanFlow } from "./CleanFlow";
 import { ResultItem } from "./ResultItem";
@@ -16,6 +18,20 @@ export function Dashboard({ onOpenSettings }: Props) {
 	const [scanning, setScanning] = useState(false);
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const [showClean, setShowClean] = useState(false);
+	const { completed: scanProgress } = useScanProgress(scanning);
+	const totalScanners = 12;
+	const { isDark, setTheme } = useDarkMode();
+	const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
+
+	const loadHistory = useCallback(() => {
+		invoke<ScanHistory>("scan_history")
+			.then((h) => setHistory(h.entries))
+			.catch(() => {});
+	}, []);
+
+	useEffect(() => {
+		loadHistory();
+	}, [loadHistory]);
 
 	const {
 		filtered,
@@ -32,10 +48,11 @@ export function Dashboard({ onOpenSettings }: Props) {
 			const data = await invoke<ScanResult[]>("scan");
 			setResults(data);
 			setSelected(new Set());
+			loadHistory();
 		} finally {
 			setScanning(false);
 		}
-	}, []);
+	}, [loadHistory]);
 
 	function toggleItem(path: string) {
 		setSelected((prev) => {
@@ -116,7 +133,15 @@ export function Dashboard({ onOpenSettings }: Props) {
 						</h1>
 						<p className="text-sm text-muted mt-0.5">Intelligent Mac cleanup</p>
 					</div>
-					<div className="flex gap-2">
+					<div className="flex gap-2 items-center">
+						<button
+							type="button"
+							className="p-2 rounded-lg text-muted hover:text-ink hover:bg-card transition-colors"
+							onClick={() => setTheme(isDark ? "light" : "dark")}
+							title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+						>
+							{isDark ? "☀️" : "🌙"}
+						</button>
 						{selected.size > 0 && (
 							<button
 								type="button"
@@ -167,6 +192,31 @@ export function Dashboard({ onOpenSettings }: Props) {
 					</div>
 				)}
 
+				{/* History */}
+				{history.length > 0 && (
+					<div className="px-6 py-3">
+						<div className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-2">
+							Recent scans
+						</div>
+						<div className="flex gap-2 overflow-x-auto pb-1">
+							{history
+								.slice(-5)
+								.reverse()
+								.map((h) => (
+									<div
+										key={h.timestamp}
+										className="bg-card border border-border rounded-xl px-3 py-2 text-xs shrink-0"
+									>
+										<span className="font-medium">{h.results_count} items</span>
+										<span className="text-muted ml-2">
+											{formatSize(h.total_bytes)}
+										</span>
+									</div>
+								))}
+						</div>
+					</div>
+				)}
+
 				{/* Toolbar */}
 				{results.length > 0 && (
 					<div className="flex items-center gap-3 px-6 py-2">
@@ -198,8 +248,20 @@ export function Dashboard({ onOpenSettings }: Props) {
 						</div>
 					)}
 					{scanning && (
-						<div className="flex items-center justify-center h-full text-sm text-muted animate-pulse">
-							Scanning your Mac...
+						<div className="flex flex-col items-center justify-center h-full gap-4 px-8">
+							<div className="w-full max-w-xs">
+								<div className="h-2 rounded-full bg-bg2 overflow-hidden">
+									<div
+										className="h-full rounded-full bg-teal transition-all duration-300"
+										style={{
+											width: `${Math.round((scanProgress.length / totalScanners) * 100)}%`,
+										}}
+									/>
+								</div>
+							</div>
+							<p className="text-sm text-muted">
+								Scanning... {scanProgress.length}/{totalScanners} ecosystems
+							</p>
 						</div>
 					)}
 					{filtered.map((r) => (

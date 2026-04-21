@@ -28,6 +28,17 @@ export function totalSize(results: ScanResult[]): number {
 	return results.reduce((sum, r) => sum + r.size_bytes, 0);
 }
 
+export interface ScanHistoryEntry {
+	timestamp: string;
+	results_count: number;
+	total_bytes: number;
+	categories: string[];
+}
+
+export interface ScanHistory {
+	entries: ScanHistoryEntry[];
+}
+
 export function groupByCategory(
 	results: ScanResult[],
 ): Record<string, ScanResult[]> {

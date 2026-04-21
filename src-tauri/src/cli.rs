@@ -1,3 +1,4 @@
+use crate::logger;
 use crate::models::ScanConfig;
 use crate::scanners;
 use crate::trash;
@@ -27,6 +28,14 @@ pub enum Commands {
     Report {
         #[arg(long, default_value = "md", help = "Output format: md or json")]
         format: String,
+        #[arg(long, help = "Enrich report with LLM explanations (requires Ollama)")]
+        explain: bool,
+    },
+    Logs {
+        #[arg(long, help = "Clear all log files")]
+        clear: bool,
+        #[arg(long, default_value = "50", help = "Number of lines to show")]
+        lines: usize,
     },
 }
 
@@ -40,7 +49,8 @@ pub fn run_cli(cli: Cli) {
             confirm,
             include_review,
         } => rt.block_on(cmd_clean(dry_run, confirm, include_review)),
-        Commands::Report { format } => rt.block_on(cmd_report(&format)),
+        Commands::Report { format, explain } => rt.block_on(cmd_report(&format, explain)),
+        Commands::Logs { clear, lines } => cmd_logs(clear, lines),
     }
 }
 
@@ -152,7 +162,7 @@ async fn cmd_clean(dry_run: bool, confirm: bool, include_review: bool) {
     );
 }
 
-async fn cmd_report(format: &str) {
+async fn cmd_report(format: &str, explain: bool) {
     let config = ScanConfig::default();
     let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/tmp"));
     let scanners = scanners::all_scanners();
@@ -172,6 +182,18 @@ async fn cmd_report(format: &str) {
         return;
     }
 
+    let llm_client = if explain {
+        let client = crate::llm::OllamaClient::default();
+        if client.is_available().await {
+            Some(client)
+        } else {
+            eprintln!("Ollama not available, using fallback explanations");
+            None
+        }
+    } else {
+        None
+    };
+
     println!("# shwip scan report\n");
     let mut groups: std::collections::HashMap<String, Vec<&crate::models::ScanResult>> =
         std::collections::HashMap::new();
@@ -183,11 +205,18 @@ async fn cmd_report(format: &str) {
         let cat_total: u64 = items.iter().map(|r| r.size_bytes).sum();
         println!("## {} ({})\n", category, format_size(cat_total));
         for item in items {
+            let explanation = if let Some(ref client) = llm_client {
+                client.explain_item(item).await
+            } else if explain {
+                crate::llm::fallback_explanation(item)
+            } else {
+                item.reason.clone()
+            };
             println!(
                 "- **{:?}** {} -- {}",
                 item.confidence,
                 format_size(item.size_bytes),
-                item.reason
+                explanation
             );
         }
         println!();
@@ -199,6 +228,34 @@ async fn cmd_report(format: &str) {
         results.len(),
         format_size(total)
     );
+}
+
+fn cmd_logs(clear: bool, lines: usize) {
+    let dir = logger::log_dir();
+
+    if clear {
+        if dir.exists() {
+            if let Ok(entries) = std::fs::read_dir(&dir) {
+                for entry in entries.flatten() {
+                    let _ = std::fs::remove_file(entry.path());
+                }
+            }
+        }
+        println!("Logs cleared.");
+        return;
+    }
+
+    match logger::latest_log_path() {
+        Some(path) => {
+            let content = std::fs::read_to_string(&path).unwrap_or_default();
+            let all_lines: Vec<&str> = content.lines().collect();
+            let start = all_lines.len().saturating_sub(lines);
+            for line in &all_lines[start..] {
+                println!("{line}");
+            }
+        }
+        None => println!("No log files found in {}", dir.display()),
+    }
 }
 
 fn format_size(bytes: u64) -> String {

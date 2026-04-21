@@ -1,5 +1,8 @@
 pub mod cli;
 pub mod error;
+pub mod history;
+pub mod llm;
+pub mod logger;
 mod menu;
 pub mod models;
 mod notifications;
@@ -8,20 +11,63 @@ pub mod scanners;
 pub mod settings;
 pub mod trash;
 
+use history::{ScanHistory, ScanHistoryEntry};
 use models::ScanResult;
 use settings::Settings;
-use tauri::Manager;
+use tauri::Emitter;
 use tauri_plugin_store::StoreExt;
 
 #[tauri::command]
 async fn scan(app: tauri::AppHandle) -> Result<Vec<ScanResult>, String> {
-    let results = scanner::scan_all().await.map_err(|e| e.to_string())?;
+    let emitter = app.clone();
+    let results = scanner::scan_all_with_progress(move |name, ok| {
+        let _ = emitter.emit(
+            "scan-progress",
+            serde_json::json!({ "scanner": name, "ok": ok }),
+        );
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let entry = history::record_scan(&results);
+    save_history_entry(&app, entry);
 
     let total_bytes: u64 = results.iter().map(|r| r.size_bytes).sum();
     let size_gb = total_bytes as f64 / 1_073_741_824.0;
     notifications::notify_scan_complete(&app, results.len(), size_gb);
 
     Ok(results)
+}
+
+fn save_history_entry(app: &tauri::AppHandle, entry: ScanHistoryEntry) {
+    let Ok(store) = app.store("settings.json") else {
+        return;
+    };
+    let mut hist: ScanHistory = store
+        .get("scan_history")
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default();
+    hist.push(entry);
+    if let Ok(val) = serde_json::to_value(&hist) {
+        store.set("scan_history", val);
+        let _ = store.save();
+    }
+}
+
+#[tauri::command]
+fn scan_history(app: tauri::AppHandle) -> Result<ScanHistory, String> {
+    let store = app.store("settings.json").map_err(|e| e.to_string())?;
+    let hist: ScanHistory = store
+        .get("scan_history")
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default();
+    Ok(hist)
+}
+
+#[tauri::command]
+async fn explain_item(item: ScanResult) -> Result<String, String> {
+    let client = llm::OllamaClient::default();
+    Ok(client.explain_item(&item).await)
 }
 
 #[tauri::command]
@@ -51,7 +97,8 @@ pub fn run() {
             Some(vec![]),
         ))
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![scan, load_settings, save_settings])
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![scan, load_settings, save_settings, scan_history, explain_item])
         .setup(|app| {
             let handle = app.handle().clone();
             menu::hide_dock(&handle);

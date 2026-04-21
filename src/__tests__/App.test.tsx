@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import App from "../App";
 
 vi.mock("@tauri-apps/api/core", () => ({
-	invoke: vi.fn(),
+	invoke: vi.fn().mockResolvedValue({ entries: [] }),
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+	listen: vi.fn().mockResolvedValue(() => {}),
 }));
 
 describe("App", () => {

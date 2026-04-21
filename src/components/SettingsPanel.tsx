@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
+import type { Theme } from "../hooks/useDarkMode";
+import { useDarkMode } from "../hooks/useDarkMode";
 import type { Settings } from "../types";
 
 const ALL_PROFILES = [
@@ -39,6 +41,7 @@ interface Props {
 export function SettingsPanel({ onClose }: Props) {
 	const [settings, setSettings] = useState<Settings | null>(null);
 	const [saving, setSaving] = useState(false);
+	const { theme, setTheme } = useDarkMode();
 
 	useEffect(() => {
 		invoke<Settings>("load_settings").then(setSettings);
@@ -134,6 +137,28 @@ export function SettingsPanel({ onClose }: Props) {
 						/>
 						<span className="text-sm text-body">Show scan notifications</span>
 					</label>
+				</div>
+
+				<div>
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+						Theme
+					</h3>
+					<div className="flex gap-2">
+						{(["system", "light", "dark"] as Theme[]).map((t) => (
+							<button
+								key={t}
+								type="button"
+								className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+									theme === t
+										? "border-teal bg-teal-subtle text-ink font-medium"
+										: "border-border text-muted hover:text-secondary"
+								}`}
+								onClick={() => setTheme(t)}
+							>
+								{t === "system" ? "System" : t === "light" ? "Light" : "Dark"}
+							</button>
+						))}
+					</div>
 				</div>
 			</div>
 
