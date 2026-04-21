@@ -6,35 +6,67 @@ Ce projet herite des principes du CLAUDE.md global. TDD, Plan Mode, Read Before 
 
 > Nettoyage Mac intelligent pour developpeurs. Tauri 2 (React + Rust), zero cloud, zero telemetrie.
 
-<!-- product.md et stack.md : charger a la demande uniquement (Read docs/product.md / docs/stack.md) -->
-
 ## Stack
 
 | Cle | Valeur |
 |-----|--------|
-| Frontend | React 19 + TypeScript |
-| Desktop | Tauri 2 |
+| Frontend | React 19 + TypeScript + Tailwind CSS 4 |
+| Desktop | Tauri 2 (menu bar only, ActivationPolicy::Accessory) |
 | Backend | Rust (edition 2021) |
 | Bundler | Vite 6 |
 | Tests | Vitest (frontend) + cargo test (backend) |
+| Lint | biome check (TS) + cargo clippy (Rust) |
 | PM | bun |
+| CLI | clap 4 derive (meme binaire) |
 | Dev | `bun run tauri dev` |
 | Build | `bun run tauri build` |
-| Lint | `biome check` (TS) + `cargo clippy` (Rust) |
+| Test Rust | `cd src-tauri && cargo test` |
+| Test Front | `bun run test` |
 
 ## Architecture
 
-- Scan engine en Rust : regles deterministes (90%) + LLM optionnel (10%)
-- Frontend React : affichage rapport, actions clean/undo
-- LLM hybride : llama-cpp-rs embarque (tiny) OU Ollama REST API OU aucun
-- CLI + GUI : meme binaire, `shwip scan` (CLI) ou `shwip` (ouvre Tauri)
+```
+src-tauri/src/
+  main.rs             # CLI vs GUI detection (clap ou Tauri)
+  lib.rs              # Tauri Builder, plugins, commands (scan, load/save_settings)
+  cli.rs              # clap : scan, clean, report subcommands
+  error.rs            # ShwipError enum
+  models.rs           # ScanResult, Confidence, ScanConfig
+  scanner.rs          # scan_all() async orchestration via scanners/
+  scanners/           # 12 modules (trait EcosystemScanner)
+  settings.rs         # tauri-plugin-store wrapper
+  menu.rs             # tray menu + dock hidden
+  trash.rs            # crate trash + undo log
+  notifications.rs    # tauri-plugin-notification
+
+src/
+  App.tsx             # Router dashboard/settings
+  types.ts            # Types miroir Rust
+  components/         # Dashboard, ResultItem, CleanFlow, SettingsPanel
+  hooks/              # useFilter (categories, tri)
+  assets/             # Logos SVG light/dark
+  index.css           # Design system mnlabs (Teal + Blue, beige/cream)
+```
+
+## Plugins Tauri actifs
+
+tauri-plugin-shell, tauri-plugin-store, tauri-plugin-notification, tauri-plugin-autostart, tauri-plugin-dialog
+
+## Design system
+
+Palette mnlabs : Teal #38786e (primaire shwip), Blue #375da2 (CTA), fond beige #F4F0E8 light / #161514 dark. Badges : green #48783e (SAFE), orange #b87a20 (REVIEW). Fonts : Instrument Sans (UI) + Newsreader (titres). Ref : `/Users/maximenejad/Local/logo-inspirations/propositions/brand-colors.html`
+
+## Avancement
+
+| Phase | Statut | Branche |
+|-------|--------|---------|
+| P1 Fondations (async, plugins, tray, tests) | Terminee | feature/foundations |
+| P2 Scanners (12 ecosystemes TDD) | Terminee | feature/foundations |
+| P3 CLI + Frontend (clap, dashboard, brand) | Terminee | feature/foundations |
+| P4 Polish (LLM, updater, dark toggle, CI) | A faire | -- |
+
+Plan complet : `.claude/plans/keen-greeting-hippo.md`
 
 ## Connaissance projet
 
-Accumulee dans `.claude/memory/` (auto-apprentissage, symlink vers `~/.claude/projects/<slug>/memory/` cree par `session-start-async.sh`). 4 types :
-- feedback_*.md : pieges, corrections, patterns critiques
-- project_*.md : vision, decisions, stack, structure, backlog
-- user_*.md : profil, preferences
-- reference_*.md : liens externes, ressources
-
-Index : `.claude/memory/MEMORY.md` (auto-cree par hook, 1 ligne par fichier, sections par type)
+Accumulee dans `.claude/memory/` (symlink). Index : `.claude/memory/MEMORY.md`.
