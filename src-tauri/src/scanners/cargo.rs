@@ -27,7 +27,7 @@ impl EcosystemScanner for CargoScanner {
                         path: dir.to_string_lossy().into(),
                         size_bytes: size,
                         confidence: Confidence::Safe,
-                        reason: format!("{}, regenerable via cargo build", label),
+                        reason: format!("{label}, regenerable via cargo build"),
                     });
                 }
             }
@@ -80,7 +80,7 @@ fn scan_rustup_toolchains(
                 path: path.to_string_lossy().into(),
                 size_bytes: size,
                 confidence: Confidence::Safe,
-                reason: format!("toolchain '{}' not active", name),
+                reason: format!("toolchain '{name}' not active"),
             });
         }
     }

@@ -15,7 +15,7 @@ use crate::error::ShwipError;
 use crate::models::{ScanConfig, ScanResult};
 use std::path::Path;
 
-pub trait EcosystemScanner {
+pub trait EcosystemScanner: Send + Sync {
     fn name(&self) -> &'static str;
     fn scan(&self, home: &Path, config: &ScanConfig) -> Result<Vec<ScanResult>, ShwipError>;
 }

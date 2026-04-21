@@ -44,11 +44,11 @@ impl EcosystemScanner for NvmScanner {
             let in_nvmrc = nvmrc_versions.iter().any(|v| v.contains(&version));
 
             let (confidence, reason) = if is_current {
-                (Confidence::Keep, format!("v{} is the active Node version", version))
+                (Confidence::Keep, format!("v{version} is the active Node version"))
             } else if in_nvmrc {
-                (Confidence::Keep, format!("v{} referenced in a .nvmrc file", version))
+                (Confidence::Keep, format!("v{version} referenced in a .nvmrc file"))
             } else {
-                (Confidence::Safe, format!("v{} not in any .nvmrc and not active", version))
+                (Confidence::Safe, format!("v{version} not in any .nvmrc and not active"))
             };
 
             if confidence != Confidence::Keep {

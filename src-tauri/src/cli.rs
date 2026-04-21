@@ -53,7 +53,7 @@ async fn cmd_scan(json: bool) {
     for scanner in scanners {
         match scanner.scan(&home, &config) {
             Ok(r) => results.extend(r),
-            Err(e) => eprintln!("scanner '{}' failed: {}", scanner.name(), e),
+            Err(e) => eprintln!("scanner '{}' failed: {e}", scanner.name()),
         }
     }
 
@@ -67,10 +67,7 @@ async fn cmd_scan(json: bool) {
             println!("Nothing to clean. Your Mac is tidy.");
             return;
         }
-        println!(
-            "{:<12} {:<8} {:>10}  {}",
-            "CATEGORY", "LEVEL", "SIZE", "PATH"
-        );
+        println!("{:<12} {:<8} {:>10}  PATH", "CATEGORY", "LEVEL", "SIZE");
         println!("{}", "-".repeat(72));
         for r in &results {
             println!(
@@ -212,7 +209,7 @@ fn format_size(bytes: u64) -> String {
     } else if bytes >= 1_024 {
         format!("{} KB", bytes / 1_024)
     } else {
-        format!("{} B", bytes)
+        format!("{bytes} B")
     }
 }
 

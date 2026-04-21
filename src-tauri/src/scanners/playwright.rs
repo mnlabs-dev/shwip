@@ -42,7 +42,7 @@ impl EcosystemScanner for PlaywrightScanner {
                 continue;
             }
 
-            let key = format!("{}-{}", browser, version);
+            let key = format!("{browser}-{version}");
             let is_latest = latest.get(browser.as_str()).map(|v| v == version).unwrap_or(false);
 
             if !is_latest {
@@ -51,7 +51,7 @@ impl EcosystemScanner for PlaywrightScanner {
                     path: cache_dir.join(&key).to_string_lossy().into(),
                     size_bytes: *size,
                     confidence: Confidence::Safe,
-                    reason: format!("{} {} (newer version available)", browser, version),
+                    reason: format!("{browser} {version} (newer version available)"),
                 });
             }
         }

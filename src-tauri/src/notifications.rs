@@ -6,8 +6,7 @@ pub fn notify_scan_complete(app: &AppHandle, count: usize, size_gb: f64) {
         "Nothing to clean. Your Mac is tidy.".to_string()
     } else {
         format!(
-            "{} items found, {:.1} GB reclaimable",
-            count, size_gb
+            "{count} items found, {size_gb:.1} GB reclaimable"
         )
     };
 

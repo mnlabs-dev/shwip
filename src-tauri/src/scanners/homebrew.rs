@@ -36,7 +36,7 @@ impl EcosystemScanner for HomebrewScanner {
             size_bytes: size,
             confidence: Confidence::Safe,
             reason: match cleanup_items {
-                Some(n) => format!("Homebrew cache, {} items cleanable", n),
+                Some(n) => format!("Homebrew cache, {n} items cleanable"),
                 None => "Homebrew cache directory".into(),
             },
         }])

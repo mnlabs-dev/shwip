@@ -58,11 +58,11 @@ fn scan_docker_system(config: &ScanConfig) -> Result<Vec<ScanResult>, ShwipError
             }
 
             results.push(ScanResult {
-                category: format!("Docker {}", category),
+                category: format!("Docker {category}"),
                 path: "docker system".into(),
                 size_bytes: size,
                 confidence: Confidence::Safe,
-                reason: format!("Docker {} reclaimable: {}", category, reclaimable),
+                reason: format!("Docker {category} reclaimable: {reclaimable}"),
             });
         }
     }
@@ -75,14 +75,14 @@ fn parse_docker_size(s: &str) -> u64 {
     let (num_part, _) = s.split_once('(').unwrap_or((s, ""));
     let num_part = num_part.trim();
 
-    let (num_str, multiplier) = if num_part.ends_with("GB") {
-        (&num_part[..num_part.len() - 2], 1_073_741_824u64)
-    } else if num_part.ends_with("MB") {
-        (&num_part[..num_part.len() - 2], 1_048_576u64)
-    } else if num_part.ends_with("kB") {
-        (&num_part[..num_part.len() - 2], 1_024u64)
-    } else if num_part.ends_with('B') {
-        (&num_part[..num_part.len() - 1], 1u64)
+    let (num_str, multiplier) = if let Some(stripped) = num_part.strip_suffix("GB") {
+        (stripped, 1_073_741_824u64)
+    } else if let Some(stripped) = num_part.strip_suffix("MB") {
+        (stripped, 1_048_576u64)
+    } else if let Some(stripped) = num_part.strip_suffix("kB") {
+        (stripped, 1_024u64)
+    } else if let Some(stripped) = num_part.strip_suffix('B') {
+        (stripped, 1u64)
     } else {
         (num_part, 1u64)
     };

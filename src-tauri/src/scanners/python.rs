@@ -26,7 +26,7 @@ impl EcosystemScanner for PythonScanner {
                         path: dir.to_string_lossy().into(),
                         size_bytes: size,
                         confidence: Confidence::Safe,
-                        reason: format!("{}, regenerable", label),
+                        reason: format!("{label}, regenerable"),
                     });
                 }
             }
@@ -78,8 +78,7 @@ fn find_orphan_venvs(home: &Path, config: &ScanConfig) -> Result<Vec<ScanResult>
                     size_bytes: size,
                     confidence: Confidence::Review,
                     reason: format!(
-                        "virtualenv '{}' with no Python project files in parent",
-                        venv_name
+                        "virtualenv '{venv_name}' with no Python project files in parent"
                     ),
                 });
             }

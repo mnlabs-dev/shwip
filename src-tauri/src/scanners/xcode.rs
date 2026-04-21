@@ -79,7 +79,7 @@ fn scan_simulators(home: &Path, config: &ScanConfig) -> Result<Vec<ScanResult>, 
                 path: path.to_string_lossy().into(),
                 size_bytes: size,
                 confidence: Confidence::Review,
-                reason: format!("simulator device '{}'", name),
+                reason: format!("simulator device '{name}'"),
             });
         }
     }

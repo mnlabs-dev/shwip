@@ -58,8 +58,7 @@ impl EcosystemScanner for AppResidualScanner {
                         size_bytes: size,
                         confidence: Confidence::Safe,
                         reason: format!(
-                            "'{}' not installed, no active process, no LaunchAgent",
-                            name
+                            "'{name}' not installed, no active process, no LaunchAgent"
                         ),
                     });
                 }

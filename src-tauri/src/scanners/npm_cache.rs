@@ -35,7 +35,7 @@ pub fn scan_cache_dir(
         path: path.to_string_lossy().into(),
         size_bytes: size,
         confidence: Confidence::Safe,
-        reason: format!("{}, regenerable via install", category),
+        reason: format!("{category}, regenerable via install"),
     }])
 }
 

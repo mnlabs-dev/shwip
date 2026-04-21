@@ -1,7 +1,6 @@
 use crate::error::ShwipError;
 use crate::models::{Confidence, ScanConfig, ScanResult};
 use crate::scanners::EcosystemScanner;
-use std::fs;
 use std::path::Path;
 use std::process::Command;
 
