@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
+import logoDark from "../assets/logo-dark.svg";
+import logoLight from "../assets/logo-light.svg";
 import { useDarkMode } from "../hooks/useDarkMode";
 import type { SortKey } from "../hooks/useFilter";
 import { useFilter } from "../hooks/useFilter";
@@ -89,8 +91,12 @@ export function Dashboard({ onOpenSettings }: Props) {
 		<div className="flex h-screen">
 			{/* Sidebar */}
 			<aside className="w-56 border-r border-border flex flex-col py-5 px-4 shrink-0">
-				<div className="flex items-center gap-2.5 px-2 mb-7">
-					<div className="w-2.5 h-2.5 rounded bg-teal" />
+				<div className="flex items-center gap-2 px-2 mb-7">
+					<img
+						src={isDark ? logoDark : logoLight}
+						alt="shwip logo"
+						className="w-7 h-7 rounded"
+					/>
 					<span className="font-serif text-lg font-semibold tracking-tight">
 						shwip
 					</span>
