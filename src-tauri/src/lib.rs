@@ -18,9 +18,49 @@ use tauri::Emitter;
 use tauri_plugin_store::StoreExt;
 
 #[tauri::command]
+async fn clean_items(paths: Vec<String>) -> Result<u32, String> {
+    let home = dirs::home_dir().ok_or_else(|| "cannot determine home directory".to_string())?;
+    let mut count = 0u32;
+
+    for path_str in &paths {
+        let path = std::path::Path::new(path_str.as_str());
+        let canonical = match path.canonicalize() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::warn!(path = %path_str, error = %e, "skipping: cannot canonicalize");
+                continue;
+            }
+        };
+        if !canonical.starts_with(&home) {
+            tracing::warn!(path = %path_str, "rejected: path outside home directory");
+            continue;
+        }
+        match crate::trash::move_to_trash(&canonical) {
+            Ok(()) => count += 1,
+            Err(e) => tracing::warn!(path = %path_str, error = %e, "failed to trash"),
+        }
+    }
+
+    Ok(count)
+}
+
+#[tauri::command]
 async fn scan(app: tauri::AppHandle) -> Result<Vec<ScanResult>, String> {
+    let config = {
+        let store = app.store("settings.json").map_err(|e| e.to_string())?;
+        let s: Settings = store
+            .get("settings")
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default();
+        models::ScanConfig {
+            profiles: s.profiles,
+            exclusions: s.exclusions,
+            min_size_bytes: models::ScanConfig::default().min_size_bytes,
+        }
+    };
+
     let emitter = app.clone();
-    let results = scanner::scan_all_with_progress(move |name, ok| {
+    let results = scanner::scan_all_with_progress(config, move |name, ok| {
         let _ = emitter.emit(
             "scan-progress",
             serde_json::json!({ "scanner": name, "ok": ok }),
@@ -98,7 +138,14 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![scan, load_settings, save_settings, scan_history, explain_item])
+        .invoke_handler(tauri::generate_handler![
+            scan,
+            clean_items,
+            load_settings,
+            save_settings,
+            scan_history,
+            explain_item
+        ])
         .setup(|app| {
             let handle = app.handle().clone();
             menu::hide_dock(&handle);

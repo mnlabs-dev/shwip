@@ -1,7 +1,7 @@
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::TrayIconBuilder,
-    AppHandle, Manager,
+    AppHandle, Emitter, Manager,
 };
 use tauri_plugin_updater::UpdaterExt;
 
@@ -28,15 +28,12 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         ],
     )?;
 
-    TrayIconBuilder::new()
-        .icon(app.default_window_icon().unwrap().clone())
+    let mut builder = TrayIconBuilder::new()
         .icon_as_template(true)
         .menu(&menu)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "scan_now" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.eval("window.__shwipScanFromTray && window.__shwipScanFromTray()");
-                }
+                let _ = app.emit("tray-scan", ());
             }
             "open_dashboard" => {
                 if let Some(window) = app.get_webview_window("main") {
@@ -48,13 +45,20 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
                     let _ = window.set_focus();
-                    let _ = window.eval("window.__shwipOpenSettings && window.__shwipOpenSettings()");
                 }
+                let _ = app.emit("tray-settings", ());
             }
             "check_updates" => {
                 let handle = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    match handle.updater().expect("updater not configured").check().await {
+                    let updater = match handle.updater() {
+                        Ok(u) => u,
+                        Err(e) => {
+                            tracing::warn!("updater not configured: {e}");
+                            return;
+                        }
+                    };
+                    match updater.check().await {
                         Ok(Some(update)) => {
                             tracing::info!(version = %update.version, "update available");
                             let _ = update.download_and_install(|_, _| {}, || {}).await;
@@ -72,9 +76,13 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 app.exit(0);
             }
             _ => {}
-        })
-        .build(app)?;
+        });
 
+    if let Some(icon) = app.default_window_icon() {
+        builder = builder.icon(icon.clone());
+    }
+
+    builder.build(app)?;
     Ok(())
 }
 

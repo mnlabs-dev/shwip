@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 import { useDarkMode } from "../hooks/useDarkMode";
 import type { SortKey } from "../hooks/useFilter";
@@ -53,6 +54,15 @@ export function Dashboard({ onOpenSettings }: Props) {
 			setScanning(false);
 		}
 	}, [loadHistory]);
+
+	useEffect(() => {
+		const unlisten = listen("tray-scan", () => {
+			scan();
+		});
+		return () => {
+			unlisten.then((f) => f());
+		};
+	}, [scan]);
 
 	function toggleItem(path: string) {
 		setSelected((prev) => {

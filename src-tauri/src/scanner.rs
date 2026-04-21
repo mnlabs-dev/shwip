@@ -13,11 +13,13 @@ pub async fn scan_all() -> Result<Vec<ScanResult>, ShwipError> {
     Ok(results)
 }
 
-pub async fn scan_all_with_progress<F>(progress: F) -> Result<Vec<ScanResult>, ShwipError>
+pub async fn scan_all_with_progress<F>(
+    config: ScanConfig,
+    progress: F,
+) -> Result<Vec<ScanResult>, ShwipError>
 where
     F: Fn(&str, bool) + Send + 'static,
 {
-    let config = ScanConfig::default();
     let home = dirs_home();
     let active_scanners = scanners::scanners_for_profiles(&config.profiles);
     let total = active_scanners.len();
@@ -134,7 +136,7 @@ mod tests {
     async fn test_scan_all_with_progress_calls_callback() {
         let count = Arc::new(AtomicUsize::new(0));
         let count_clone = count.clone();
-        let results = scan_all_with_progress(move |_name, _ok| {
+        let results = scan_all_with_progress(ScanConfig::default(), move |_name, _ok| {
             count_clone.fetch_add(1, Ordering::Relaxed);
         })
         .await;
