@@ -2,7 +2,8 @@ pub mod error;
 mod menu;
 pub mod models;
 mod notifications;
-mod scanner;
+pub mod scanner;
+pub mod scanners;
 pub mod settings;
 pub mod trash;
 
