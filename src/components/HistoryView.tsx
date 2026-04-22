@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import type { ScanHistory, ScanHistoryEntry } from "../types";
 import { formatSize } from "../types";
+import { Sparkline } from "./Sparkline";
 
 function timeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime();
@@ -42,6 +43,12 @@ export function HistoryView() {
 				</h1>
 				<p className="text-sm text-muted mt-0.5">Past scan results</p>
 			</header>
+
+			{entries.length >= 2 && (
+				<div className="px-6 pt-4">
+					<Sparkline values={entries.map((e) => e.total_bytes)} />
+				</div>
+			)}
 
 			<div className="px-6 py-4">
 				<table className="w-full">

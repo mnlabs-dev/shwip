@@ -132,11 +132,17 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 
 				{phase === "done" && !error && (
 					<>
-						<div className="flex items-center gap-3 mb-2">
-							<CheckCircle className="w-5 h-5 text-green" weight="bold" />
-							<h3 className="font-serif text-lg font-semibold">Done</h3>
+						<div className="text-center mb-4">
+							<CheckCircle
+								className="w-10 h-10 text-green mx-auto mb-2"
+								weight="bold"
+							/>
+							<div className="font-serif text-3xl font-semibold text-teal">
+								{formatSize(total)}
+							</div>
+							<div className="text-sm text-muted mt-1">recovered</div>
 						</div>
-						<p className="text-sm text-secondary mb-4">
+						<p className="text-sm text-secondary mb-4 text-center">
 							{cleaned} items moved to trash. You can undo from Finder.
 						</p>
 						<div className="flex gap-2 justify-end">
