@@ -80,6 +80,15 @@ export function Dashboard({ isDark, onToggleTheme }: Props) {
 		};
 	}, [scan]);
 
+	useEffect(() => {
+		const unlisten = listen("scheduled-scan-complete", () => {
+			loadHistory();
+		});
+		return () => {
+			unlisten.then((f) => f());
+		};
+	}, [loadHistory]);
+
 	function toggleItem(path: string) {
 		setSelected((prev) => {
 			const next = new Set(prev);
