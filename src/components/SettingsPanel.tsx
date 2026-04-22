@@ -1,5 +1,7 @@
+import { Bell, Database, Palette, Power } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import type { Theme } from "../hooks/useDarkMode";
 import { useDarkMode } from "../hooks/useDarkMode";
 import type { Settings } from "../types";
@@ -40,20 +42,23 @@ interface Props {
 
 export function SettingsPanel({ onClose }: Props) {
 	const [settings, setSettings] = useState<Settings | null>(null);
-	const [saving, setSaving] = useState(false);
+	const [showSaved, setShowSaved] = useState(false);
 	const { theme, setTheme } = useDarkMode();
+	const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	useEffect(() => {
 		invoke<Settings>("load_settings").then(setSettings);
 	}, []);
 
 	async function save(updated: Settings) {
-		setSaving(true);
 		setSettings(updated);
 		try {
 			await invoke("save_settings", { settings: updated });
-		} finally {
-			setSaving(false);
+			setShowSaved(true);
+			clearTimeout(saveTimer.current);
+			saveTimer.current = setTimeout(() => setShowSaved(false), 1500);
+		} catch {
+			// silent
 		}
 	}
 
@@ -80,14 +85,22 @@ export function SettingsPanel({ onClose }: Props) {
 				</button>
 			</div>
 
-			<div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+			<div className="flex-1 overflow-y-auto px-5 py-4 space-y-8">
 				<div>
-					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
+						<Database className="w-4 h-4" />
 						Ecosystems to scan
 					</h3>
-					<div className="space-y-2">
+					<div className="grid grid-cols-3 gap-2">
 						{ALL_PROFILES.map((p) => (
-							<label key={p} className="flex items-center gap-3 cursor-pointer">
+							<label
+								key={p}
+								className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${
+									settings.profiles.includes(p)
+										? "border-teal bg-teal-subtle"
+										: "border-border hover:border-secondary"
+								}`}
+							>
 								<input
 									type="checkbox"
 									checked={settings.profiles.includes(p)}
@@ -103,7 +116,8 @@ export function SettingsPanel({ onClose }: Props) {
 				</div>
 
 				<div>
-					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
+						<Power className="w-4 h-4" />
 						Autostart
 					</h3>
 					<label className="flex items-center gap-3 cursor-pointer">
@@ -120,7 +134,8 @@ export function SettingsPanel({ onClose }: Props) {
 				</div>
 
 				<div>
-					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
+						<Bell className="w-4 h-4" />
 						Notifications
 					</h3>
 					<label className="flex items-center gap-3 cursor-pointer">
@@ -140,7 +155,8 @@ export function SettingsPanel({ onClose }: Props) {
 				</div>
 
 				<div>
-					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
+						<Palette className="w-4 h-4" />
 						Theme
 					</h3>
 					<div className="flex gap-2">
@@ -162,7 +178,19 @@ export function SettingsPanel({ onClose }: Props) {
 				</div>
 			</div>
 
-			{saving && <div className="px-5 py-2 text-xs text-muted">Saving...</div>}
+			<AnimatePresence>
+				{showSaved && (
+					<motion.div
+						className="px-5 py-2 text-xs text-green bg-green-subtle"
+						initial={{ opacity: 0, y: 4 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: 4 }}
+						transition={{ duration: 0.2 }}
+					>
+						Settings saved
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

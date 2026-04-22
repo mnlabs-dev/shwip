@@ -78,9 +78,9 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         });
 
-    if let Some(icon) = app.default_window_icon() {
-        builder = builder.icon(icon.clone());
-    }
+    let tray_rgba = include_bytes!("../icons/tray-icon.rgba");
+    let tray_icon = tauri::image::Image::new(tray_rgba, 44, 44);
+    builder = builder.icon(tray_icon);
 
     builder.build(app)?;
     Ok(())

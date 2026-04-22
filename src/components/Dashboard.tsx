@@ -1,16 +1,25 @@
+import {
+	List,
+	MagnifyingGlass,
+	Moon,
+	Package,
+	Sun,
+} from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
-import logoDark from "../assets/logo-dark.svg";
-import logoLight from "../assets/logo-light.svg";
+import { CATEGORY_ICONS } from "../categoryIcons";
 import { useDarkMode } from "../hooks/useDarkMode";
 import type { SortKey } from "../hooks/useFilter";
 import { useFilter } from "../hooks/useFilter";
 import { useScanProgress } from "../hooks/useScanProgress";
 import type { ScanHistory, ScanHistoryEntry, ScanResult } from "../types";
-import { formatSize, totalSize } from "../types";
+import { formatSize, groupByCategory, totalSize } from "../types";
+import { CategoryGroup } from "./CategoryGroup";
 import { CleanFlow } from "./CleanFlow";
-import { ResultItem } from "./ResultItem";
+import { ScanSpinner } from "./ScanSpinner";
+import { Sidebar } from "./Sidebar";
+import { SpaceDonut } from "./SpaceDonut";
 
 interface Props {
 	onOpenSettings: () => void;
@@ -25,6 +34,13 @@ export function Dashboard({ onOpenSettings }: Props) {
 	const totalScanners = 12;
 	const { isDark, setTheme } = useDarkMode();
 	const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+		try {
+			return JSON.parse(localStorage.getItem("shwip-sidebar") ?? "false");
+		} catch {
+			return false;
+		}
+	});
 
 	const loadHistory = useCallback(() => {
 		invoke<ScanHistory>("scan_history")
@@ -89,65 +105,40 @@ export function Dashboard({ onOpenSettings }: Props) {
 
 	return (
 		<div className="flex h-screen">
-			{/* Sidebar */}
-			<aside className="w-56 border-r border-border flex flex-col py-5 px-4 shrink-0">
-				<div className="flex items-center gap-2 px-2 mb-7">
-					<img
-						src={isDark ? logoDark : logoLight}
-						alt="shwip logo"
-						className="w-7 h-7 rounded"
-					/>
-					<span className="font-serif text-lg font-semibold tracking-tight">
-						shwip
-					</span>
-				</div>
-
-				<div className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3 px-2">
-					Categories
-				</div>
-
-				<div className="space-y-0.5 flex-1 overflow-y-auto">
-					{categories.map((cat) => (
-						<button
-							key={cat}
-							type="button"
-							className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-								activeCategories.has(cat)
-									? "bg-card text-ink font-medium shadow-sm"
-									: "text-muted hover:text-secondary hover:bg-card"
-							}`}
-							onClick={() => toggleCategory(cat)}
-						>
-							{cat}
-						</button>
-					))}
-					{categories.length === 0 && (
-						<p className="text-xs text-placeholder px-3">
-							Run a scan to see categories
-						</p>
-					)}
-				</div>
-
-				<div className="border-t border-border pt-3 mt-3">
-					<button
-						type="button"
-						className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted hover:text-secondary hover:bg-card transition-colors"
-						onClick={onOpenSettings}
-					>
-						Settings
-					</button>
-				</div>
-			</aside>
+			<Sidebar
+				collapsed={sidebarCollapsed}
+				isDark={isDark}
+				categories={categories}
+				activeCategories={activeCategories}
+				onToggleCategory={toggleCategory}
+				onOpenSettings={onOpenSettings}
+			/>
 
 			{/* Main */}
 			<main className="flex-1 flex flex-col min-w-0">
 				{/* Header */}
 				<header className="flex items-center justify-between px-6 py-5 border-b border-border">
-					<div>
-						<h1 className="font-serif text-2xl font-semibold tracking-tight">
-							Dashboard
-						</h1>
-						<p className="text-sm text-muted mt-0.5">Intelligent Mac cleanup</p>
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-card transition-colors"
+							onClick={() => {
+								const next = !sidebarCollapsed;
+								setSidebarCollapsed(next);
+								localStorage.setItem("shwip-sidebar", JSON.stringify(next));
+							}}
+							title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+						>
+							<List className="w-5 h-5" />
+						</button>
+						<div>
+							<h1 className="font-serif text-2xl font-semibold tracking-tight">
+								Dashboard
+							</h1>
+							<p className="text-sm text-muted mt-0.5">
+								Intelligent Mac cleanup
+							</p>
+						</div>
 					</div>
 					<div className="flex gap-2 items-center">
 						<button
@@ -156,7 +147,11 @@ export function Dashboard({ onOpenSettings }: Props) {
 							onClick={() => setTheme(isDark ? "light" : "dark")}
 							title={isDark ? "Switch to light mode" : "Switch to dark mode"}
 						>
-							{isDark ? "☀️" : "🌙"}
+							{isDark ? (
+								<Sun className="w-5 h-5" />
+							) : (
+								<Moon className="w-5 h-5" />
+							)}
 						</button>
 						{selected.size > 0 && (
 							<button
@@ -169,10 +164,11 @@ export function Dashboard({ onOpenSettings }: Props) {
 						)}
 						<button
 							type="button"
-							className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue text-white hover:brightness-110 transition-all disabled:opacity-40"
+							className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue text-white hover:brightness-110 transition-all disabled:opacity-40"
 							onClick={scan}
 							disabled={scanning}
 						>
+							<MagnifyingGlass className="w-4 h-4" />
 							{scanning ? "Scanning..." : "Scan"}
 						</button>
 					</div>
@@ -180,31 +176,34 @@ export function Dashboard({ onOpenSettings }: Props) {
 
 				{/* Stats */}
 				{results.length > 0 && (
-					<div className="grid grid-cols-4 gap-3 px-6 py-4">
-						<div className="bg-card border border-border rounded-2xl p-4">
-							<div className="text-xs text-muted mb-1">Total found</div>
-							<div className="font-serif text-2xl font-medium">
-								{results.length}
+					<div className="flex items-start gap-4 px-6 py-4">
+						<div className="grid grid-cols-2 gap-3 flex-1">
+							<div className="bg-card border border-border rounded-2xl p-4">
+								<div className="text-xs text-muted mb-1">Total found</div>
+								<div className="font-serif text-2xl font-medium">
+									{results.length}
+								</div>
+							</div>
+							<div className="bg-card border border-border rounded-2xl p-4">
+								<div className="text-xs text-muted mb-1">Reclaimable</div>
+								<div className="font-serif text-2xl font-medium">
+									{formatSize(total)}
+								</div>
+							</div>
+							<div className="bg-card border border-border rounded-2xl p-4">
+								<div className="text-xs text-muted mb-1">Safe</div>
+								<div className="font-serif text-2xl font-medium text-green">
+									{safeCount}
+								</div>
+							</div>
+							<div className="bg-card border border-border rounded-2xl p-4">
+								<div className="text-xs text-muted mb-1">Review</div>
+								<div className="font-serif text-2xl font-medium text-orange">
+									{reviewCount}
+								</div>
 							</div>
 						</div>
-						<div className="bg-card border border-border rounded-2xl p-4">
-							<div className="text-xs text-muted mb-1">Reclaimable</div>
-							<div className="font-serif text-2xl font-medium">
-								{formatSize(total)}
-							</div>
-						</div>
-						<div className="bg-card border border-border rounded-2xl p-4">
-							<div className="text-xs text-muted mb-1">Safe</div>
-							<div className="font-serif text-2xl font-medium text-green">
-								{safeCount}
-							</div>
-						</div>
-						<div className="bg-card border border-border rounded-2xl p-4">
-							<div className="text-xs text-muted mb-1">Review</div>
-							<div className="font-serif text-2xl font-medium text-orange">
-								{reviewCount}
-							</div>
-						</div>
+						<SpaceDonut results={results} />
 					</div>
 				)}
 
@@ -264,30 +263,22 @@ export function Dashboard({ onOpenSettings }: Props) {
 						</div>
 					)}
 					{scanning && (
-						<div className="flex flex-col items-center justify-center h-full gap-4 px-8">
-							<div className="w-full max-w-xs">
-								<div className="h-2 rounded-full bg-bg2 overflow-hidden">
-									<div
-										className="h-full rounded-full bg-teal transition-all duration-300"
-										style={{
-											width: `${Math.round((scanProgress.length / totalScanners) * 100)}%`,
-										}}
-									/>
-								</div>
-							</div>
-							<p className="text-sm text-muted">
-								Scanning... {scanProgress.length}/{totalScanners} ecosystems
-							</p>
-						</div>
+						<ScanSpinner completed={scanProgress} total={totalScanners} />
 					)}
-					{filtered.map((r) => (
-						<ResultItem
-							key={r.path}
-							result={r}
-							selected={selected.has(r.path)}
-							onToggle={toggleItem}
-						/>
-					))}
+					{results.length > 0 &&
+						!scanning &&
+						Object.entries(groupByCategory(filtered))
+							.sort(([, a], [, b]) => totalSize(b) - totalSize(a))
+							.map(([cat, items]) => (
+								<CategoryGroup
+									key={cat}
+									category={cat}
+									results={items}
+									selected={selected}
+									onToggle={toggleItem}
+									icon={CATEGORY_ICONS[cat] ?? Package}
+								/>
+							))}
 				</div>
 			</main>
 

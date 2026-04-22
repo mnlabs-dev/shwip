@@ -13,7 +13,9 @@
     "lint": "biome check src/"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@tauri-apps/api": "^2",
+    "motion": "^12.38.0",
     "react": "^19",
     "react-dom": "^19"
   },
