@@ -124,7 +124,7 @@ export function Dashboard() {
 					{selected.size > 0 && (
 						<button
 							type="button"
-							className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:brightness-110 transition-all"
+							className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:-translate-y-px hover:shadow-md transition-all"
 							onClick={() => setShowClean(true)}
 						>
 							Clean {selected.size} items
@@ -132,7 +132,7 @@ export function Dashboard() {
 					)}
 					<button
 						type="button"
-						className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue text-white hover:brightness-110 transition-all disabled:opacity-40"
+						className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue text-white hover:-translate-y-px hover:shadow-md transition-all disabled:opacity-40"
 						onClick={scan}
 						disabled={scanning}
 					>

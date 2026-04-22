@@ -82,7 +82,7 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 							</button>
 							<button
 								type="button"
-								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:brightness-110 transition-all"
+								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:-translate-y-px hover:shadow-md transition-all"
 								onClick={handleClean}
 							>
 								Clean {safeItems.length} items
@@ -118,7 +118,7 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 							</button>
 							<button
 								type="button"
-								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:brightness-110 transition-all"
+								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:-translate-y-px hover:shadow-md transition-all"
 								onClick={() => {
 									setError(null);
 									handleClean();
@@ -148,7 +148,7 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 						<div className="flex gap-2 justify-end">
 							<button
 								type="button"
-								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:brightness-110 transition-all"
+								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:-translate-y-px hover:shadow-md transition-all"
 								onClick={() => {
 									onDone();
 									onClose();
