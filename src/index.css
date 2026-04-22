@@ -52,6 +52,8 @@
   /* Product accent: teal + blue */
   --color-teal: #38786e;
   --color-blue: #375da2;
+  --color-teal-btn: #38786e;
+  --color-blue-btn: #375da2;
 
   /* Extended palette */
   --color-green: #48783e;

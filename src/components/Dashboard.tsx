@@ -10,7 +10,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 import { CATEGORY_ICONS } from "../categoryIcons";
-import { useDarkMode } from "../hooks/useDarkMode";
 import type { SortKey } from "../hooks/useFilter";
 import { useFilter } from "../hooks/useFilter";
 import { useScanProgress } from "../hooks/useScanProgress";
@@ -22,14 +21,18 @@ import { FilterChips } from "./FilterChips";
 import { ScanSpinner } from "./ScanSpinner";
 import { SpaceDonut } from "./SpaceDonut";
 
-export function Dashboard() {
+interface Props {
+	isDark: boolean;
+	onToggleTheme: () => void;
+}
+
+export function Dashboard({ isDark, onToggleTheme }: Props) {
 	const [results, setResults] = useState<ScanResult[]>([]);
 	const [scanning, setScanning] = useState(false);
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const [showClean, setShowClean] = useState(false);
 	const { completed: scanProgress } = useScanProgress(scanning);
 	const totalScanners = 12;
-	const { isDark, setTheme } = useDarkMode();
 	const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
 	const [scanError, setScanError] = useState<string | null>(null);
 
@@ -112,7 +115,7 @@ export function Dashboard() {
 					<button
 						type="button"
 						className="p-2 rounded-lg text-muted hover:text-ink hover:bg-card transition-colors"
-						onClick={() => setTheme(isDark ? "light" : "dark")}
+						onClick={onToggleTheme}
 						title={isDark ? "Switch to light mode" : "Switch to dark mode"}
 					>
 						{isDark ? (
@@ -124,7 +127,7 @@ export function Dashboard() {
 					{selected.size > 0 && (
 						<button
 							type="button"
-							className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:-translate-y-px hover:shadow-md transition-all"
+							className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal-btn text-white hover:-translate-y-px hover:shadow-md transition-all"
 							onClick={() => setShowClean(true)}
 						>
 							Clean {selected.size} items
@@ -132,7 +135,7 @@ export function Dashboard() {
 					)}
 					<button
 						type="button"
-						className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue text-white hover:-translate-y-px hover:shadow-md transition-all disabled:opacity-40"
+						className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-btn text-white hover:-translate-y-px hover:shadow-md transition-all disabled:opacity-40"
 						onClick={scan}
 						disabled={scanning}
 					>

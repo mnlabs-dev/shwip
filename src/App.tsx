@@ -10,7 +10,7 @@ import { useDarkMode } from "./hooks/useDarkMode";
 
 function App() {
 	const [view, setView] = useState<View>("dashboard");
-	const { isDark } = useDarkMode();
+	const { isDark, setTheme } = useDarkMode();
 
 	useEffect(() => {
 		const unlisten = listen("tray-settings", () => {
@@ -25,7 +25,12 @@ function App() {
 		<div className="flex h-screen">
 			<Sidebar activeView={view} onNavigate={setView} isDark={isDark} />
 			<div className="flex-1 min-w-0">
-				{view === "dashboard" && <Dashboard />}
+				{view === "dashboard" && (
+					<Dashboard
+						isDark={isDark}
+						onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
+					/>
+				)}
 				{view === "history" && <HistoryView />}
 				{view === "automation" && <AutomationView />}
 				{view === "settings" && (

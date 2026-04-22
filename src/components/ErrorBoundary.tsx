@@ -57,7 +57,7 @@ function ErrorFallback({
 					<button
 						type="button"
 						onClick={onReset}
-						className="flex-1 px-4 py-2 bg-teal text-white rounded-lg text-sm font-semibold hover:-translate-y-px hover:shadow-md transition-all"
+						className="flex-1 px-4 py-2 bg-teal-btn text-white rounded-lg text-sm font-semibold hover:-translate-y-px hover:shadow-md transition-all"
 					>
 						Try Again
 					</button>
