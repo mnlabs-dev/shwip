@@ -1,4 +1,4 @@
-import { Info, Timer } from "@phosphor-icons/react";
+import { CheckCircle, Timer } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import type { Settings } from "../types";
@@ -40,9 +40,11 @@ export function AutomationView() {
 							<span className="text-sm font-medium text-ink">
 								Scheduled scans
 							</span>
-							<span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-subtle text-orange font-medium">
-								Coming soon
-							</span>
+							{settings.schedule_enabled && (
+								<span className="text-[10px] px-2 py-0.5 rounded-full bg-green-subtle text-green font-medium">
+									Active
+								</span>
+							)}
 						</div>
 						<button
 							type="button"
@@ -93,11 +95,16 @@ export function AutomationView() {
 				</div>
 
 				{settings.schedule_enabled && (
-					<div className="flex items-start gap-3 px-4 py-3 bg-orange-subtle rounded-xl">
-						<Info className="w-4 h-4 text-orange shrink-0 mt-0.5" />
+					<div className="flex items-start gap-3 px-4 py-3 bg-green-subtle rounded-xl">
+						<CheckCircle className="w-4 h-4 text-green shrink-0 mt-0.5" />
 						<p className="text-xs text-secondary">
-							Your preferences are saved. Automatic scanning will be available
-							in a future update. For now, use the Scan button on the Dashboard.
+							Scans run automatically every{" "}
+							{settings.schedule_interval_hours <= 24
+								? "day"
+								: settings.schedule_interval_hours <= 168
+									? "week"
+									: "month"}
+							. Next scan based on last activity.
 						</p>
 					</div>
 				)}

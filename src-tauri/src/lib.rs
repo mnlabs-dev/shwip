@@ -7,6 +7,7 @@ mod menu;
 pub mod models;
 mod notifications;
 pub mod scanner;
+pub mod scheduler;
 pub mod scanners;
 pub mod settings;
 pub mod trash;
@@ -46,6 +47,9 @@ async fn clean_items(paths: Vec<String>) -> Result<u32, String> {
 
 #[tauri::command]
 async fn scan(app: tauri::AppHandle) -> Result<Vec<ScanResult>, String> {
+    let _guard = scheduler::ScanGuard::acquire()
+        .ok_or_else(|| "A scan is already in progress".to_string())?;
+
     let config = {
         let store = app.store("settings.json").map_err(|e| e.to_string())?;
         let s: Settings = store
@@ -159,6 +163,7 @@ pub fn run() {
             let handle = app.handle().clone();
             menu::hide_dock(&handle);
             menu::setup_tray(&handle)?;
+            scheduler::start(handle);
             Ok(())
         })
         .run(tauri::generate_context!())
