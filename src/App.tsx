@@ -1,30 +1,44 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect, useState } from "react";
+import { AutomationView } from "./components/AutomationView";
+import { Dashboard } from "./components/Dashboard";
+import { HistoryView } from "./components/HistoryView";
+import { SettingsPanel } from "./components/SettingsPanel";
+import type { View } from "./components/Sidebar";
+import { Sidebar } from "./components/Sidebar";
+import { useDarkMode } from "./hooks/useDarkMode";
 
 function App() {
-  const [results, setResults] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(false);
+	const [view, setView] = useState<View>("dashboard");
+	const { isDark, setTheme } = useDarkMode();
 
-  async function scan() {
-    setScanning(true);
-    try {
-      const report = await invoke<string>("scan");
-      setResults(report);
-    } finally {
-      setScanning(false);
-    }
-  }
+	useEffect(() => {
+		const unlisten = listen("tray-settings", () => {
+			setView("settings");
+		});
+		return () => {
+			unlisten.then((f) => f());
+		};
+	}, []);
 
-  return (
-    <main style={{ padding: "2rem", fontFamily: "system-ui" }}>
-      <h1>shwip</h1>
-      <p>Intelligent Mac cleanup for developers</p>
-      <button onClick={scan} disabled={scanning}>
-        {scanning ? "Scanning..." : "Scan"}
-      </button>
-      {results && <pre style={{ marginTop: "1rem", whiteSpace: "pre-wrap" }}>{results}</pre>}
-    </main>
-  );
+	return (
+		<div className="flex h-screen">
+			<Sidebar activeView={view} onNavigate={setView} isDark={isDark} />
+			<div className="flex-1 min-w-0">
+				{view === "dashboard" && (
+					<Dashboard
+						isDark={isDark}
+						onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
+					/>
+				)}
+				{view === "history" && <HistoryView />}
+				{view === "automation" && <AutomationView />}
+				{view === "settings" && (
+					<SettingsPanel onClose={() => setView("dashboard")} />
+				)}
+			</div>
+		</div>
+	);
 }
 
 export default App;

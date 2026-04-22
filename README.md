@@ -6,22 +6,30 @@ shwip understands your developer workflow: it knows which apps are uninstalled, 
 
 ## Install
 
-```bash
-brew install shwip/tap/shwip
-```
+Download the latest `.dmg` from [Releases](https://github.com/maximenejad/shwip/releases).
 
 ## Usage
 
+### GUI (menu bar)
+
+shwip runs as a menu bar app (no dock icon). Click the tray icon to scan, open the dashboard, or check settings.
+
+### CLI
+
 ```bash
-shwip scan              # Scan and report reclaimable space
-shwip clean --dry-run   # Preview what would be cleaned
-shwip clean --confirm   # Clean SAFE items (always uses trash)
-shwip report            # Detailed markdown report
+shwip scan                    # scan and report reclaimable space
+shwip scan --json             # JSON output for scripting
+shwip clean --dry-run         # preview what would be cleaned
+shwip clean --confirm         # clean SAFE items (always uses trash)
+shwip report                  # detailed markdown report
+shwip report --explain        # LLM-enriched report (requires Ollama)
+shwip logs                    # show recent logs
+shwip logs --clear            # clear log files
 ```
 
 ## What it scans
 
-NVM, npm, bun, pnpm, uv, cargo, Ollama, Playwright, Docker, Xcode, Homebrew, app residuals.
+12 ecosystems: NVM, npm, bun, pnpm, uv/pip, cargo/rustup, Ollama, Playwright, Docker/OrbStack, Xcode, Homebrew, app residuals.
 
 ## Safety
 
@@ -29,6 +37,29 @@ NVM, npm, bun, pnpm, uv, cargo, Ollama, Playwright, Docker, Xcode, Homebrew, app
 - Dry-run by default
 - Three confidence levels: SAFE, REVIEW, KEEP
 - Cross-references installed apps, running processes, and LaunchAgents
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19 + TypeScript + Tailwind CSS 4 |
+| Desktop | Tauri 2 (menu bar only) |
+| Backend | Rust (async, tokio) |
+| LLM | Ollama REST (optional, local) |
+| Tests | Vitest + cargo test (55 Rust + 14 frontend) |
+
+## Development
+
+```bash
+bun install
+bun run tauri dev
+```
+
+```bash
+cd src-tauri && cargo test     # Rust tests
+bun run test                   # frontend tests
+bun run lint                   # biome check
+```
 
 ## License
 

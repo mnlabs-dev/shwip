@@ -1,106 +1,153 @@
-use serde::Serialize;
+use crate::error::ShwipError;
+use crate::models::{ScanConfig, ScanResult};
+use crate::scanners;
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
+use tokio::task::JoinSet;
 
-#[derive(Serialize)]
-pub struct ScanResult {
-    pub category: String,
-    pub path: String,
-    pub size_bytes: u64,
-    pub confidence: Confidence,
-    pub reason: String,
+pub async fn scan_all() -> Result<Vec<ScanResult>, ShwipError> {
+    tracing::info!("starting scan with default config");
+    let config = ScanConfig::default();
+    let results = scan_parallel(&config).await?;
+    tracing::info!(count = results.len(), "scan complete");
+    Ok(results)
 }
 
-#[derive(Serialize)]
-pub enum Confidence {
-    Safe,
-    Review,
-    Keep,
-}
-
-pub fn scan_all() -> Vec<ScanResult> {
+pub async fn scan_all_with_progress<F>(
+    config: ScanConfig,
+    progress: F,
+) -> Result<Vec<ScanResult>, ShwipError>
+where
+    F: Fn(&str, bool) + Send + 'static,
+{
     let home = dirs_home();
+    let active_scanners = scanners::scanners_for_profiles(&config.profiles);
+    let total = active_scanners.len();
+    let mut set = JoinSet::new();
+
+    for scanner in active_scanners {
+        let h = home.clone();
+        let c = config.clone();
+        set.spawn_blocking(move || {
+            let name = scanner.name().to_string();
+            let result = scanner.scan(&h, &c);
+            (name, result)
+        });
+    }
+
     let mut results = Vec::new();
+    let mut done = 0usize;
 
-    results.extend(scan_app_residuals(&home));
+    while let Some(join_result) = set.join_next().await {
+        let (name, scan_result) = join_result.map_err(|e| ShwipError::Io(e.to_string()))?;
+        done += 1;
+        match scan_result {
+            Ok(r) => {
+                progress(&name, true);
+                results.extend(r);
+            }
+            Err(e) => {
+                eprintln!("scanner '{name}' failed: {e}");
+                progress(&name, false);
+            }
+        }
+        let _ = (done, total);
+    }
 
-    results
+    if !config.exclusions.is_empty() {
+        results.retain(|r| {
+            let path = Path::new(&r.path);
+            !config.exclusions.iter().any(|ex| path.starts_with(ex))
+        });
+    }
+
+    Ok(results)
 }
 
-fn scan_app_residuals(home: &PathBuf) -> Vec<ScanResult> {
-    let app_support = home.join("Library/Application Support");
-    let installed = installed_apps();
+async fn scan_parallel(config: &ScanConfig) -> Result<Vec<ScanResult>, ShwipError> {
+    let home = dirs_home();
+    let active_scanners = scanners::scanners_for_profiles(&config.profiles);
+    let mut set = JoinSet::new();
+
+    for scanner in active_scanners {
+        let h = home.clone();
+        let c = config.clone();
+        set.spawn_blocking(move || {
+            let name = scanner.name().to_string();
+            let result = scanner.scan(&h, &c);
+            (name, result)
+        });
+    }
+
     let mut results = Vec::new();
 
-    if let Ok(entries) = fs::read_dir(&app_support) {
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().to_string();
-            let path = entry.path();
-
-            if !path.is_dir() {
-                continue;
-            }
-
-            let size = dir_size(&path);
-            if size < 10_000_000 {
-                continue;
-            }
-
-            if !is_app_installed(&name, &installed) {
-                results.push(ScanResult {
-                    category: "App residual".into(),
-                    path: path.to_string_lossy().into(),
-                    size_bytes: size,
-                    confidence: Confidence::Safe,
-                    reason: format!("'{}' not found in /Applications", name),
-                });
+    while let Some(join_result) = set.join_next().await {
+        let (name, scan_result) = join_result.map_err(|e| ShwipError::Io(e.to_string()))?;
+        match scan_result {
+            Ok(r) => results.extend(r),
+            Err(e) => {
+                eprintln!("scanner '{name}' failed: {e}");
             }
         }
     }
 
-    results
+    Ok(results)
 }
 
-fn installed_apps() -> Vec<String> {
-    let mut apps = Vec::new();
-    if let Ok(entries) = fs::read_dir("/Applications") {
-        for entry in entries.flatten() {
-            apps.push(
-                entry
-                    .file_name()
-                    .to_string_lossy()
-                    .trim_end_matches(".app")
-                    .to_lowercase(),
-            );
-        }
-    }
-    apps
-}
-
-fn is_app_installed(name: &str, installed: &[String]) -> bool {
-    let lower = name.to_lowercase();
-    installed.iter().any(|app| {
-        app.contains(&lower) || lower.contains(app)
-    })
-}
-
-fn dir_size(path: &PathBuf) -> u64 {
+pub fn dir_size(path: &Path) -> u64 {
     let mut size = 0u64;
-    if let Ok(entries) = fs::read_dir(path) {
-        for entry in entries.flatten() {
-            let meta = entry.metadata();
-            if let Ok(m) = meta {
-                if m.is_file() {
-                    size += m.len();
-                } else if m.is_dir() {
-                    size += dir_size(&entry.path());
-                }
+    let entries = match fs::read_dir(path) {
+        Ok(e) => e,
+        Err(_) => return 0,
+    };
+    for entry in entries.flatten() {
+        if let Ok(m) = entry.metadata() {
+            if m.is_file() {
+                size += m.len();
+            } else if m.is_dir() {
+                size += dir_size(&entry.path());
             }
         }
     }
     size
 }
 
-fn dirs_home() -> PathBuf {
-    dirs::home_dir().unwrap_or_else(|| PathBuf::from("/tmp"))
+fn dirs_home() -> std::path::PathBuf {
+    dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    #[test]
+    fn test_dir_size_nonexistent() {
+        assert_eq!(dir_size(Path::new("/nonexistent/path")), 0);
+    }
+
+    #[test]
+    fn test_dirs_home_returns_path() {
+        let home = dirs_home();
+        assert!(home.exists());
+    }
+
+    #[tokio::test]
+    async fn test_scan_all_returns_results() {
+        let results = scan_all().await;
+        assert!(results.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_scan_all_with_progress_calls_callback() {
+        let count = Arc::new(AtomicUsize::new(0));
+        let count_clone = count.clone();
+        let results = scan_all_with_progress(ScanConfig::default(), move |_name, _ok| {
+            count_clone.fetch_add(1, Ordering::Relaxed);
+        })
+        .await;
+        assert!(results.is_ok());
+        assert!(count.load(Ordering::Relaxed) > 0);
+    }
 }

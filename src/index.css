@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+/* Instrument Sans -- police UI, variable (latin-ext + latin) */
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/InstrumentSans-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/InstrumentSans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Newsreader -- police serifs titres, variable */
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("./assets/fonts/Newsreader-latin-ext-400.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("./assets/fonts/Newsreader-latin-400.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@theme {
+  /* Neutrals (mnlabs design system) */
+  --color-bg: #F4F0E8;
+  --color-bg2: #EDE8DE;
+  --color-sidebar: #EDE8DE;
+  --color-card: #FAF8F2;
+  --color-border: #DDD8CC;
+  --color-ink: #262424;
+  --color-body: #3D3A38;
+  --color-secondary: #6B6560;
+  --color-muted: #9A938A;
+  --color-placeholder: #C0B8AE;
+
+  /* Product accent: teal + blue */
+  --color-teal: #38786e;
+  --color-blue: #375da2;
+  --color-teal-btn: #38786e;
+  --color-blue-btn: #375da2;
+
+  /* Extended palette */
+  --color-green: #48783e;
+  --color-orange: #b87a20;
+  --color-red: #b83a2a;
+  --color-violet: #6b4fa2;
+  --color-coral: #c84a2a;
+  --color-gold: #c89a20;
+  --color-rose: #c94077;
+
+  /* Surface variants (8% opacity light) */
+  --color-teal-subtle: rgba(56, 120, 110, 0.08);
+  --color-blue-subtle: rgba(55, 93, 162, 0.08);
+  --color-green-subtle: rgba(72, 120, 62, 0.08);
+  --color-orange-subtle: rgba(184, 122, 32, 0.08);
+  --color-red-subtle: rgba(184, 58, 42, 0.08);
+  --color-violet-subtle: rgba(107, 79, 162, 0.08);
+  --color-coral-subtle: rgba(200, 74, 42, 0.08);
+
+  /* Radius (design system scale) */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+
+  /* Typography */
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-serif: "Newsreader", Georgia, serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Focus visible (WCAG 2.2) */
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+  }
+
+  button:focus-visible {
+    outline-offset: 3px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted);
+  }
+
+  * {
+    scrollbar-color: var(--color-border) transparent;
+    scrollbar-width: thin;
+  }
+
+  /* Text selection */
+  ::selection {
+    background: rgba(56, 120, 110, 0.2);
+  }
+
+  /* Dark mode */
+  .dark {
+    --color-bg: #161514;
+    --color-bg2: #1C1A18;
+    --color-sidebar: #1C1A18;
+    --color-card: #222120;
+    --color-border: #333130;
+    --color-ink: #EDE8DE;
+    --color-body: #C8C0B5;
+    --color-secondary: #8A8478;
+    --color-muted: #5E5850;
+    --color-placeholder: #3A3835;
+
+    --color-teal: #80C0B0;
+    --color-blue: #8EB0D5;
+    --color-green: #90C080;
+    --color-orange: #E0B870;
+    --color-red: #E09080;
+    --color-violet: #B8A0D8;
+    --color-coral: #E09070;
+    --color-gold: #E8C050;
+    --color-rose: #E890B0;
+
+    --color-teal-subtle: rgba(128, 192, 176, 0.12);
+    --color-blue-subtle: rgba(142, 176, 213, 0.12);
+    --color-green-subtle: rgba(144, 192, 128, 0.12);
+    --color-orange-subtle: rgba(224, 184, 112, 0.12);
+    --color-red-subtle: rgba(224, 144, 128, 0.12);
+    --color-violet-subtle: rgba(184, 160, 216, 0.12);
+    --color-coral-subtle: rgba(224, 144, 112, 0.12);
+  }
+
+  /* Dark mode typography adjustments (design system: +50 weight, +0.02em) */
+  .dark {
+    font-variation-settings: "wght" 450;
+    letter-spacing: 0.02em;
+  }
+
+  .dark h1, .dark h2, .dark h3 {
+    font-variation-settings: "wght" 550;
+  }
+
+  .dark ::selection {
+    background: rgba(128, 192, 176, 0.25);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
