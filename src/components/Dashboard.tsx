@@ -1,4 +1,11 @@
-import { MagnifyingGlass, Moon, Package, Sun } from "@phosphor-icons/react";
+import {
+	MagnifyingGlass,
+	Moon,
+	Package,
+	Sun,
+	WarningCircle,
+	X,
+} from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
@@ -24,6 +31,7 @@ export function Dashboard() {
 	const totalScanners = 12;
 	const { isDark, setTheme } = useDarkMode();
 	const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
+	const [scanError, setScanError] = useState<string | null>(null);
 
 	const loadHistory = useCallback(() => {
 		invoke<ScanHistory>("scan_history")
@@ -46,11 +54,15 @@ export function Dashboard() {
 
 	const scan = useCallback(async () => {
 		setScanning(true);
+		setScanError(null);
 		try {
 			const data = await invoke<ScanResult[]>("scan");
 			setResults(data);
 			setSelected(new Set());
 			loadHistory();
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			setScanError(msg.length > 100 ? `${msg.slice(0, 100)}...` : msg);
 		} finally {
 			setScanning(false);
 		}
@@ -129,6 +141,20 @@ export function Dashboard() {
 					</button>
 				</div>
 			</header>
+
+			{scanError && (
+				<div className="mx-6 mt-4 px-4 py-3 bg-red-subtle rounded-xl flex items-center gap-3">
+					<WarningCircle className="w-5 h-5 text-red shrink-0" />
+					<p className="text-sm text-red flex-1">{scanError}</p>
+					<button
+						type="button"
+						className="text-red hover:text-ink transition-colors"
+						onClick={() => setScanError(null)}
+					>
+						<X className="w-4 h-4" />
+					</button>
+				</div>
+			)}
 
 			{/* Stats */}
 			{results.length > 0 && (

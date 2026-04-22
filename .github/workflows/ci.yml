@@ -20,9 +20,9 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install system dependencies
-        run: |
-          brew install gtk4
+      - name: Cargo build
+        working-directory: src-tauri
+        run: cargo build
 
       - name: Cargo test
         working-directory: src-tauri

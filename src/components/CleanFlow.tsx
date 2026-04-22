@@ -1,3 +1,4 @@
+import { CheckCircle, WarningCircle } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import type { ScanResult } from "../types";
@@ -14,6 +15,7 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 		"preview",
 	);
 	const [cleaned, setCleaned] = useState(0);
+	const [error, setError] = useState<string | null>(null);
 
 	const safeItems = items.filter((i) => i.confidence === "Safe");
 	const total = totalSize(safeItems);
@@ -25,9 +27,10 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 			const result = await invoke<number>("clean_items", { paths });
 			setCleaned(result);
 			setPhase("done");
-		} catch {
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			setError(msg);
 			setPhase("done");
-			setCleaned(0);
 		}
 	}
 
@@ -96,9 +99,43 @@ export function CleanFlow({ items, onDone, onClose }: Props) {
 					</div>
 				)}
 
-				{phase === "done" && (
+				{phase === "done" && error && (
 					<>
-						<h3 className="font-serif text-lg font-semibold mb-2">Done</h3>
+						<div className="flex items-center gap-3 mb-2">
+							<WarningCircle className="w-5 h-5 text-red" weight="bold" />
+							<h3 className="font-serif text-lg font-semibold">
+								Cleanup failed
+							</h3>
+						</div>
+						<p className="text-sm text-secondary mb-4">{error}</p>
+						<div className="flex gap-2 justify-end">
+							<button
+								type="button"
+								className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-body hover:bg-bg2 transition-colors"
+								onClick={onClose}
+							>
+								Close
+							</button>
+							<button
+								type="button"
+								className="px-4 py-2 text-sm font-semibold rounded-lg bg-teal text-white hover:brightness-110 transition-all"
+								onClick={() => {
+									setError(null);
+									handleClean();
+								}}
+							>
+								Try Again
+							</button>
+						</div>
+					</>
+				)}
+
+				{phase === "done" && !error && (
+					<>
+						<div className="flex items-center gap-3 mb-2">
+							<CheckCircle className="w-5 h-5 text-green" weight="bold" />
+							<h3 className="font-serif text-lg font-semibold">Done</h3>
+						</div>
 						<p className="text-sm text-secondary mb-4">
 							{cleaned} items moved to trash. You can undo from Finder.
 						</p>

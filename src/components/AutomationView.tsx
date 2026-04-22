@@ -40,6 +40,9 @@ export function AutomationView() {
 							<span className="text-sm font-medium text-ink">
 								Scheduled scans
 							</span>
+							<span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-subtle text-orange font-medium">
+								Coming soon
+							</span>
 						</div>
 						<button
 							type="button"
@@ -90,11 +93,11 @@ export function AutomationView() {
 				</div>
 
 				{settings.schedule_enabled && (
-					<div className="flex items-start gap-3 px-4 py-3 bg-blue-subtle rounded-xl">
-						<Info className="w-4 h-4 text-blue shrink-0 mt-0.5" />
+					<div className="flex items-start gap-3 px-4 py-3 bg-orange-subtle rounded-xl">
+						<Info className="w-4 h-4 text-orange shrink-0 mt-0.5" />
 						<p className="text-xs text-secondary">
-							Scheduled scans will run automatically in the background. The app
-							must be running (menu bar) for scheduled scans to execute.
+							Your preferences are saved. Automatic scanning will be available
+							in a future update. For now, use the Scan button on the Dashboard.
 						</p>
 					</div>
 				)}
