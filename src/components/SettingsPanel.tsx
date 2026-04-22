@@ -1,40 +1,10 @@
-import { Bell, Database, Palette, Power } from "@phosphor-icons/react";
+import { Bell, Brain, Palette, Power } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { Theme } from "../hooks/useDarkMode";
 import { useDarkMode } from "../hooks/useDarkMode";
 import type { Settings } from "../types";
-
-const ALL_PROFILES = [
-	"app_residuals",
-	"nvm",
-	"npm",
-	"bun",
-	"pnpm",
-	"uv",
-	"cargo",
-	"ollama",
-	"playwright",
-	"docker",
-	"xcode",
-	"homebrew",
-];
-
-const PROFILE_LABELS: Record<string, string> = {
-	app_residuals: "App residuals",
-	nvm: "NVM (Node)",
-	npm: "npm cache",
-	bun: "bun cache",
-	pnpm: "pnpm cache",
-	uv: "uv / pip",
-	cargo: "Cargo / Rustup",
-	ollama: "Ollama models",
-	playwright: "Playwright",
-	docker: "Docker / OrbStack",
-	xcode: "Xcode",
-	homebrew: "Homebrew",
-};
 
 interface Props {
 	onClose: () => void;
@@ -62,14 +32,6 @@ export function SettingsPanel({ onClose }: Props) {
 		}
 	}
 
-	function toggleProfile(profile: string) {
-		if (!settings) return;
-		const profiles = settings.profiles.includes(profile)
-			? settings.profiles.filter((p) => p !== profile)
-			: [...settings.profiles, profile];
-		save({ ...settings, profiles });
-	}
-
 	if (!settings) return null;
 
 	return (
@@ -86,35 +48,6 @@ export function SettingsPanel({ onClose }: Props) {
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 space-y-8">
-				<div>
-					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
-						<Database className="w-4 h-4" />
-						Ecosystems to scan
-					</h3>
-					<div className="grid grid-cols-3 gap-2">
-						{ALL_PROFILES.map((p) => (
-							<label
-								key={p}
-								className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${
-									settings.profiles.includes(p)
-										? "border-teal bg-teal-subtle"
-										: "border-border hover:border-secondary"
-								}`}
-							>
-								<input
-									type="checkbox"
-									checked={settings.profiles.includes(p)}
-									onChange={() => toggleProfile(p)}
-									className="w-4 h-4 rounded accent-teal"
-								/>
-								<span className="text-sm text-body">
-									{PROFILE_LABELS[p] || p}
-								</span>
-							</label>
-						))}
-					</div>
-				</div>
-
 				<div>
 					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
 						<Power className="w-4 h-4" />
@@ -175,6 +108,29 @@ export function SettingsPanel({ onClose }: Props) {
 							</button>
 						))}
 					</div>
+				</div>
+
+				<div>
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
+						<Brain className="w-4 h-4" />
+						AI Analysis
+					</h3>
+					<p className="text-xs text-muted mb-3">
+						Use local Ollama to explain scan results. No data leaves your Mac.
+					</p>
+					<label className="flex items-center gap-3 cursor-pointer">
+						<input
+							type="checkbox"
+							checked={false}
+							onChange={() => {}}
+							className="w-4 h-4 rounded accent-teal"
+							disabled
+						/>
+						<span className="text-sm text-body">Enable AI explanations</span>
+						<span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-subtle text-orange font-medium">
+							Coming soon
+						</span>
+					</label>
 				</div>
 			</div>
 

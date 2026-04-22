@@ -12,7 +12,7 @@ export function ScanSpinner({ completed, total }: Props) {
 	const offset = circumference * (1 - pct);
 
 	return (
-		<div className="flex flex-col items-center justify-center h-full gap-6">
+		<div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
 			<div className="relative w-24 h-24">
 				<motion.svg
 					className="w-full h-full -rotate-90"

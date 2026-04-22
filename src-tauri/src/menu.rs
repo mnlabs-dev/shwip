@@ -79,7 +79,7 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         });
 
     let tray_rgba = include_bytes!("../icons/tray-icon.rgba");
-    let tray_icon = tauri::image::Image::new(tray_rgba, 44, 44);
+    let tray_icon = tauri::image::Image::new(tray_rgba, 64, 64);
     builder = builder.icon(tray_icon);
 
     builder.build(app)?;
