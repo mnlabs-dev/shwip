@@ -73,8 +73,18 @@ async fn scan(app: tauri::AppHandle) -> Result<Vec<ScanResult>, String> {
     save_history_entry(&app, entry);
 
     let total_bytes: u64 = results.iter().map(|r| r.size_bytes).sum();
-    let size_gb = total_bytes as f64 / 1_073_741_824.0;
-    notifications::notify_scan_complete(&app, results.len(), size_gb);
+
+    let show_notif = {
+        let store = app.store("settings.json").map_err(|e| e.to_string())?;
+        store
+            .get("settings")
+            .and_then(|v| serde_json::from_value::<Settings>(v).ok())
+            .map(|s| s.show_notifications)
+            .unwrap_or(true)
+    };
+    if show_notif {
+        notifications::notify_scan_complete(&app, results.len(), total_bytes);
+    }
 
     Ok(results)
 }

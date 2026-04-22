@@ -1,5 +1,14 @@
-import { Bell, Brain, Palette, Power } from "@phosphor-icons/react";
+import {
+	Bell,
+	Brain,
+	FolderMinus,
+	Palette,
+	Plus,
+	Power,
+	X,
+} from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { Theme } from "../hooks/useDarkMode";
@@ -85,6 +94,66 @@ export function SettingsPanel({ onClose }: Props) {
 						/>
 						<span className="text-sm text-body">Show scan notifications</span>
 					</label>
+				</div>
+
+				<div>
+					<h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2">
+						<FolderMinus className="w-4 h-4" />
+						Exclusions
+					</h3>
+					<p className="text-xs text-muted mb-3">
+						Folders excluded from scanning. Items in these paths will be
+						skipped.
+					</p>
+					{settings.exclusions.length > 0 && (
+						<div className="space-y-1.5 mb-3">
+							{settings.exclusions.map((path) => (
+								<div
+									key={path}
+									className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-xs text-body"
+								>
+									<span className="flex-1 truncate" title={path}>
+										{path}
+									</span>
+									<button
+										type="button"
+										className="text-muted hover:text-red transition-colors"
+										onClick={() =>
+											save({
+												...settings,
+												exclusions: settings.exclusions.filter(
+													(p) => p !== path,
+												),
+											})
+										}
+									>
+										<X className="w-3.5 h-3.5" />
+									</button>
+								</div>
+							))}
+						</div>
+					)}
+					<button
+						type="button"
+						className="flex items-center gap-1.5 text-xs text-teal hover:text-ink transition-colors"
+						onClick={async () => {
+							const selected = await open({
+								directory: true,
+								multiple: false,
+							});
+							if (selected && typeof selected === "string") {
+								if (!settings.exclusions.includes(selected)) {
+									save({
+										...settings,
+										exclusions: [...settings.exclusions, selected],
+									});
+								}
+							}
+						}}
+					>
+						<Plus className="w-3.5 h-3.5" />
+						Add folder
+					</button>
 				</div>
 
 				<div>

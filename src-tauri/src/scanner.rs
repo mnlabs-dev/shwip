@@ -54,6 +54,13 @@ where
         let _ = (done, total);
     }
 
+    if !config.exclusions.is_empty() {
+        results.retain(|r| {
+            let path = Path::new(&r.path);
+            !config.exclusions.iter().any(|ex| path.starts_with(ex))
+        });
+    }
+
     Ok(results)
 }
 
